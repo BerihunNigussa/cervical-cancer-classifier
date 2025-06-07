@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cervical Cancer Classifier</title>
+<script src="https://cdn.jsdelivr.net/npm@tensorflow/tfjs@latest"></script>
+<style>
+body{
+font-family:Arial,sans-serif;
+text-align:center;
+padding:10px;
+background-color:#f0f0f0;
+}
+.container{
+max-width:600px;
+margin:auto;
+background:white;
+padding:20px;
+border-radius:8px;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+input[type="file"]{
+margin:20px 0;
+}
+button{
+padding:10px 20px;
+background-color:#007bff;
+color:white;
+border: none;
+border-radius:5px;
+cursor:pointer;
+}
+button:hover{
+background-color:#0056b3;
+}
+#result{
+margin-top:20px;
+font-weight:bold;
+}
+#preview{
+max-width:224px;
+max-height:224px;
+margin-top:10px;
+}
+</style>
+</head>
+
+<div class="container">
+<h1>Cervical Cancer Image Classifier</h1>
+<p>Upload an image to classify it into one of five classes: Dyskeratotic, Koilocytotic, Metaplastic, Parabasal, or Superficial.</p>
+<input type="file" id="imageInput" accept="image/*">
+<button onclick="predict()">Predict</button>
+<div id="preview"></div>
+<div id="result"></div>
+</div>
+<script>
+// Define class labels based on SipakMed dataset
+const classLabels=['Dyakeratotic', 'Koilocytotic', 'Metaplastic', 'Parabasal', 'Superficial'];
+
+async function predict(){
+//Load the model
+
+const model=await tf.loadLayersModel('tfjs_model/model.json);
+
+//Get the uploaded image
+
+const input=document.getElementById('imageInput');
+if(!input.files[0]){
+alert('Please upload an image first!');
+return;
+}
+//Display image preview 
+
+const imgElement=document.createElement('img');
+imgElement.width=224;
+imgElement.height=224;
+document.getElementById('preview').innerHTML=' ';
+document.getElementById('preview').appendChild(imgElement);
+
+//Preprocess the image
+imgElement.onload=async()=>{
+let tensor=tf.browser.fromPixels(imgElement).resizeNearestNeighbor([224,224]).toFloat().div(tf.scalar(255,0)).expandDims();
+
+//Make prediction
+
+const prediction=await model.predict(tensor).data();
+const predictedClassIndex=prediction.indexOf(Math.max(...prediction));
+const predictedClass=classLabels[predictedClassIndex];
+const confidence=(Math.max(...prediction)*100).toFixed(2);
+
+//Display result
+document.getElementById('result').innerText='Prediction:${predictedClass} (${confidence}%confidence)';
+};
+}
+</script>
+</body>
+</html>
